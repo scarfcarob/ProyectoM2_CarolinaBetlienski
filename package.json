@@ -1,12 +1,14 @@
 {
-  "name": "proyectom2_carolinabetlienski",
+  "name": "api-miniblog-devspark",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [ "express", "node", "postgresql","api-rest", "backend", "miniblog", "devspark"],
+  "author": "Carolina Betlienski",
   "license": "ISC",
-  "description": ""
+  "description": "API REST en Node.js y Express para la gestion de usuarios y publicaciones de MiniBlog, conectada a PostgreSQL."
 }
