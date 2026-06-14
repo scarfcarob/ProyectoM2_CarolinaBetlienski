@@ -21,6 +21,7 @@
   "license": "ISC",
   "description": "API REST en Node.js y Express para la gestion de usuarios y publicaciones de MiniBlog, conectada a PostgreSQL.",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.21.0"
   }
 }
