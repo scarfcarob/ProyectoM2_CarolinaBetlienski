@@ -1,5 +1,4 @@
 
-
 process.loadEnvFile();
 
 import pkg from 'pg';

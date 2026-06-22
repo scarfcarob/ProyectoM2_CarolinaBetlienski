@@ -10,7 +10,7 @@ function notFound(message) {
     return err;
 }
 
-// GET /authors
+
 export async function getAll() {
     const result = await pool.query(
         "SELECT id, name, email, bio, created_at FROM authors ORDER BY created_at DESC"
@@ -18,7 +18,7 @@ export async function getAll() {
     return result.rows;
 }
 
-// GET /authors/:id
+
 export async function getById(id) {
     const result = await pool.query(
         "SELECT id, name, email, bio, created_at FROM authors WHERE id = $1",
@@ -28,7 +28,7 @@ export async function getById(id) {
     return result.rows[0];
 }
 
-// POST /authors
+
 export async function create({ name, email, bio }) {
     const result = await pool.query(
         `INSERT INTO authors (name, email, bio)
@@ -39,7 +39,7 @@ export async function create({ name, email, bio }) {
     return result.rows[0];
 }
 
-// PUT /authors/:id
+
 export async function update(id, { name, email, bio }) {
     const result = await pool.query(
         `UPDATE authors SET name = $1, email = $2, bio = $3
@@ -51,7 +51,7 @@ export async function update(id, { name, email, bio }) {
     return result.rows[0];
 }
 
-// DELETE /authors/:id
+
 export async function remove(id) {
     const result = await pool.query(
         "DELETE FROM authors WHERE id = $1 RETURNING id",

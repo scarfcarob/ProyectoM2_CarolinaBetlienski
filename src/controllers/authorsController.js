@@ -3,7 +3,7 @@ import * as authorsService from "../services/authorsService.js";
 
 
 
-// GET /authors
+
 export async function getAll(req, res, next) {
     try {
         const authors = await authorsService.getAll();
@@ -13,7 +13,7 @@ export async function getAll(req, res, next) {
     }
 }
 
-// GET /authors/:id
+
 export async function getById(req, res, next) {
     try {
         const author = await authorsService.getById(req.params.id);
@@ -23,7 +23,7 @@ export async function getById(req, res, next) {
     }
 }
 
-// POST /authors
+
 export async function create(req, res, next) {
     try {
         const { name, email, bio } = req.body;
@@ -57,7 +57,7 @@ export async function create(req, res, next) {
     }
 }
 
-// PUT /authors/:id
+
 export async function update(req, res, next) {
     try {
         const { name, email, bio } = req.body;
@@ -90,7 +90,7 @@ export async function update(req, res, next) {
     }
 }
 
-// DELETE /authors/:id
+
 export async function remove(req, res, next) {
     try {
         await authorsService.remove(req.params.id);

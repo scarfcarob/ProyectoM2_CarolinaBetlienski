@@ -3,10 +3,11 @@ import * as postsService from "../services/postsService.js";
 
 
 
-// GET /posts
+
+
 export async function getAll(req, res, next) {
     try {
-        // el query param llega como string, lo convertimos a booleano
+        
         let published = undefined;
         if (req.query.published === "true") published = true;
         if (req.query.published === "false") published = false;
@@ -18,7 +19,7 @@ export async function getAll(req, res, next) {
     }
 }
 
-// GET /posts/:id
+
 export async function getById(req, res, next) {
     try {
         const post = await postsService.getById(req.params.id);
@@ -28,7 +29,7 @@ export async function getById(req, res, next) {
     }
 }
 
-// GET /posts/author/:authorId
+
 export async function getByAuthor(req, res, next) {
     try {
         const posts = await postsService.getByAuthor(req.params.authorId);
@@ -38,7 +39,7 @@ export async function getByAuthor(req, res, next) {
     }
 }
 
-// POST /posts
+
 export async function create(req, res, next) {
     try {
         const { title, content, author_id, published } = req.body;
@@ -80,7 +81,7 @@ export async function create(req, res, next) {
     }
 }
 
-// PUT /posts/:id
+
 export async function update(req, res, next) {
     try {
         const { title, content, published } = req.body;
@@ -113,7 +114,7 @@ export async function update(req, res, next) {
     }
 }
 
-// DELETE /posts/:id
+
 export async function remove(req, res, next) {
     try {
         await postsService.remove(req.params.id);
