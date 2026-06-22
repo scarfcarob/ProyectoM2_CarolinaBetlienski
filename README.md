@@ -1,4 +1,3 @@
-
 # 📝 mini-blog-api — DevSpark
 
 API REST desarrollada en Node.js + Express + PostgreSQL para gestionar autores y publicaciones del servicio de contenidos **Miniblog** de DevSpark.
@@ -13,9 +12,12 @@ API REST desarrollada en Node.js + Express + PostgreSQL para gestionar autores y
 - [Requisitos previos](#requisitos-previos)
 - [Instalación y configuración](#instalación-y-configuración)
 - [Ejecutar la aplicación](#ejecutar-la-aplicación)
+- [Ejecutar tests](#ejecutar-tests)
+- [Documentación OpenAPI / Swagger](#documentación-openapi--swagger)
 - [Endpoints disponibles](#endpoints-disponibles)
 - [Manejo de errores](#manejo-de-errores)
-- [Despliegue en producción](#despliegue-en-producción)
+- [Despliegue en Railway](#despliegue-en-railway)
+- [Uso de IA en el proyecto](#uso-de-ia-en-el-proyecto)
 
 ---
 
@@ -295,58 +297,164 @@ Todos los errores devuelven el mismo formato:
 
 ---
 
-## Despliegue en producción
+## Despliegue en Railway
 
-### Variables de entorno en producción
-
-No subir el archivo `.env` al repositorio. Configurar las variables directamente en el servidor o plataforma de despliegue (Railway, Render, AWS, etc.):
-
-```
-DB_HOST=host-produccion
-DB_PORT=5432
-DB_NAME=mini_blog_prod
-DB_USER=usuario_prod
-DB_PASSWORD=password_seguro
-PORT=3000
-```
+[Railway](https://railway.app) es la plataforma recomendada para desplegar esta API. Permite conectar el repositorio de GitHub y aprovisionar una base de datos PostgreSQL en minutos.
 
 ### Pasos para desplegar
 
-```bash
-# 1. Clonar el repo en el servidor
-git clone https://github.com/devspark/mini-blog-api.git
-cd mini-blog-api
+**1. Crear cuenta y nuevo proyecto en Railway**
 
-# 2. Instalar dependencias
-npm install
+Ir a [railway.app](https://railway.app) → New Project → Deploy from GitHub repo → seleccionar `mini-blog-api`.
 
-# 3. Configurar variables de entorno en el servidor
+**2. Agregar un servicio PostgreSQL**
 
-# 4. Crear las tablas en la DB de producción
-# (ejecutar el SQL de la sección de instalación)
+Dentro del proyecto en Railway: Add Service → Database → PostgreSQL.
 
-# 5. Arrancar el servidor
-node server.js
+Railway crea la DB automáticamente y expone las variables de entorno necesarias.
+
+**3. Configurar las variables de entorno**
+
+En Railway → tu servicio → Variables, agregar:
+
+```
+DB_HOST=${{Postgres.PGHOST}}
+DB_PORT=${{Postgres.PGPORT}}
+DB_NAME=${{Postgres.PGDATABASE}}
+DB_USER=${{Postgres.PGUSER}}
+DB_PASSWORD=${{Postgres.PGPASSWORD}}
+PORT=3000
 ```
 
-### Recomendaciones para producción
+> Railway permite referenciar las variables del servicio PostgreSQL directamente con la sintaxis `${{Postgres.VARIABLE}}`.
 
-- Usar **PM2** para mantener el proceso activo y reiniciarlo ante fallos:
+**4. Ejecutar el setup SQL en la DB de Railway**
 
-```bash
-npm install -g pm2
-pm2 start server.js --name mini-blog-api
-pm2 save
+En Railway → servicio PostgreSQL → Data → Query, ejecutar el SQL de creación de tablas:
+
+```sql
+CREATE TABLE authors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    bio TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    author_id INTEGER NOT NULL,
+    published BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE
+);
 ```
 
-- Configurar un **proxy inverso** con Nginx para exponer el puerto 80/443.
-- Usar **SSL/TLS** (Let's Encrypt) para HTTPS.
-- Nunca exponer las credenciales de la DB en el código fuente.
+**5. Deploy automático**
+
+Railway detecta los cambios en `main` y hace deploy automáticamente en cada push.
+
+### URLs de acceso en Railway
+
+| Tipo | URL | Uso |
+|------|-----|-----|
+| **Internal URL** | `mini-blog-api.railway.internal` | Comunicación entre servicios dentro de Railway (ej: si agregás un frontend en el mismo proyecto) |
+| **Public URL** | `https://mini-blog-api-production.up.railway.app` | Acceso externo — la URL que le das al equipo de front-end |
+
+> La Public URL la generás en Railway → tu servicio → Settings → Networking → Generate Domain.
+
+---
+
+## Ejecutar tests
+
+El proyecto usa el runner de tests nativo de Node.js (`node:test`) sin dependencias externas.
+
+### Correr todos los tests
+
+```bash
+node --test
+```
+
+### Correr un archivo de test específico
+
+```bash
+node --test src/tests/authors.test.js
+node --test src/tests/posts.test.js
+```
+
+### Qué cubren los tests
+
+| Archivo | Qué testea |
+|---------|-----------|
+| `authors.test.js` | GET /authors, POST /authors, validaciones de name y email |
+| `posts.test.js` | GET /posts, POST /posts, filtro por published, validaciones |
+
+### Ejemplo de salida esperada
+
+```
+✔ GET /authors devuelve lista vacía al inicio (3ms)
+✔ POST /authors crea un autor correctamente (5ms)
+✔ POST /authors falla si falta el email (2ms)
+✔ POST /posts falla si author_id no existe (4ms)
+```
+
+> Si todavía no tenés los archivos de test creados, podés pedirle al equipo backend que los agregue como próximo paso.
+
+---
+
+## Documentación OpenAPI / Swagger
+
+La documentación interactiva de la API se genera con **Swagger UI** usando el paquete `swagger-ui-express` y un archivo de especificación `openapi.yaml`.
+
+### Instalar dependencias de documentación
+
+```bash
+npm install swagger-ui-express yaml
+```
+
+### Acceder a la documentación
+
+Con el servidor corriendo, abrir en el navegador:
+
+```
+http://localhost:3000/api-docs
+```
+
+Desde ahí podés explorar y probar todos los endpoints directamente desde el navegador sin necesidad de Postman.
+
+### Especificación OpenAPI
+
+El archivo de especificación completo está en:
+
+```
+mini-blog-api/
+└── openapi.yaml
+```
+
+> Si el equipo aún no configuró Swagger UI, como alternativa podés importar el archivo `openapi.yaml` directamente en [Swagger Editor](https://editor.swagger.io) para visualizar la documentación.
+
+---
+
+## Ejecutar tests
+
+Durante el desarrollo de `mini-blog-api` se utilizó **Claude (Anthropic)** como asistente de programación. A continuación se detalla de forma transparente cómo y para qué se usó:
+
+| Tarea | Herramienta | Descripción |
+|-------|-------------|-------------|
+| Diseño de la especificación de endpoints | Claude | Se generó el borrador inicial de los 11 endpoints con sus request/response y casos borde |
+| Estructura de carpetas y arquitectura en capas | Claude | Se validó la separación en routes/controllers/services/middleware |
+| Código base de servicios, controladores y rutas | Claude | Se generaron los archivos base que luego fueron revisados y adaptados |
+| Manejo de errores de PostgreSQL | Claude | Se identificaron los códigos de error PG (23505, 23502, 23503, 22P02) y su mapeo HTTP |
+| Generación de este README | Claude | Se redactó la documentación completa del proyecto |
+
+### Criterio de uso
+
+Todo el código generado por IA fue **revisado, comprendido y adaptado** por el equipo antes de ser integrado. No se incorporó ningún fragmento sin entender su funcionamiento. La IA se usó como herramienta de aceleración, no como reemplazo del criterio técnico del desarrollador.
 
 ---
 
 ## Autor
 
 Desarrollado por el equipo backend de **DevSpark** como base del servicio de contenidos Miniblog.
-
-
