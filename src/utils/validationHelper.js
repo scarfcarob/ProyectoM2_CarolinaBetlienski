@@ -1,5 +1,4 @@
 
-
 export function isValidPostgresId(id) {
     if (id === undefined || id === null) return false;
     const parsed = Number(id);

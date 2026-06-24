@@ -1,5 +1,4 @@
 
-
 import * as postsService from "../services/postsService.js";
 
 import { isValidPostgresId, sanitizeObject } from "../utils/validationHelper.js";
