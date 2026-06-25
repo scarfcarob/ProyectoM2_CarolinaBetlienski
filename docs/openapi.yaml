@@ -1,0 +1,684 @@
+openapi: 3.0.3
+
+info:
+  title: mini-blog-api
+  description: |
+    REST API para la gestión de autores y publicaciones del servicio **MiniBlog** de DevSpark.
+
+    Construida con Node.js (ESM), Express y PostgreSQL, sigue una arquitectura en capas:
+    `routes → controllers → services → db`.
+
+    ### Convenciones generales
+    - Todas las respuestas exitosas envuelven los datos en una propiedad `data`.
+    - Todos los errores devuelven un objeto con una propiedad `error` que contiene `code` y `message`.
+    - Los IDs son enteros positivos de 32 bits (máximo 2.147.483.647).
+    - Los campos extra no declarados en el body son rechazados con `VALIDATION_ERROR`.
+  version: 1.0.0
+  contact:
+    name: DevSpark — MiniBlog Team
+
+servers:
+  - url: http://localhost:3000
+    description: Entorno local de desarrollo
+  - url: https://mini-blog-api-production.up.railway.app
+    description: Producción en Railway
+
+tags:
+  - name: Authors
+    description: Gestión de autores del blog
+  - name: Posts
+    description: Gestión de publicaciones del blog
+
+# ─────────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────────
+
+paths:
+
+  # ══════════════════════════════
+  # AUTHORS
+  # ══════════════════════════════
+
+  /authors:
+    get:
+      tags: [Authors]
+      summary: Obtener todos los autores
+      description: Devuelve la lista completa de autores ordenada por fecha de creación descendente.
+      operationId: getAllAuthors
+      responses:
+        "200":
+          description: Lista de autores obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Author"
+              example:
+                data:
+                  - id: 1
+                    name: Carolina Betlienski
+                    email: carolina@devspark.com
+                    bio: Desarrolladora backend junior en DevSpark.
+                    created_at: "2025-06-01T10:00:00.000Z"
+                  - id: 2
+                    name: Alicia López
+                    email: alicia@devspark.com
+                    bio: null
+                    created_at: "2025-05-20T08:30:00.000Z"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Authors]
+      summary: Crear un nuevo autor
+      operationId: createAuthor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorInput"
+            examples:
+              conBio:
+                summary: Con campo bio
+                value:
+                  name: Carolina Betlienski
+                  email: carolina@devspark.com
+                  bio: Desarrolladora backend en DevSpark.
+              sinBio:
+                summary: Sin campo bio (opcional)
+                value:
+                  name: Alicia López
+                  email: alicia@devspark.com
+      responses:
+        "201":
+          description: Autor creado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Author"
+              example:
+                data:
+                  id: 3
+                  name: Carolina Betlienski
+                  email: carolina@devspark.com
+                  bio: Desarrolladora backend en DevSpark.
+                  created_at: "2025-06-10T12:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /authors/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+
+    get:
+      tags: [Authors]
+      summary: Obtener un autor por ID
+      operationId: getAuthorById
+      responses:
+        "200":
+          description: Autor encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Author"
+              example:
+                data:
+                  id: 1
+                  name: Carolina Betlienski
+                  email: carolina@devspark.com
+                  bio: Desarrolladora backend en DevSpark.
+                  created_at: "2025-06-01T10:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Authors]
+      summary: Actualizar un autor por ID
+      description: |
+        Reemplazo completo del recurso. Los campos `name` y `email` son obligatorios.
+        El campo `bio` es opcional; si se omite se guarda como `null`.
+      operationId: updateAuthor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorInput"
+            example:
+              name: Carolina Betlienski
+              email: carolina@devspark.com
+              bio: Bio actualizada.
+      responses:
+        "200":
+          description: Autor actualizado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Author"
+              example:
+                data:
+                  id: 1
+                  name: Carolina Betlienski
+                  email: carolina@devspark.com
+                  bio: Bio actualizada.
+                  created_at: "2025-06-01T10:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Authors]
+      summary: Eliminar un autor por ID
+      description: |
+        Elimina el autor indicado. Si el autor tiene posts asociados, la operación
+        fallará por restricción de clave foránea (`NOT_FOUND` con código Postgres 23503).
+      operationId: deleteAuthor
+      responses:
+        "204":
+          description: Autor eliminado correctamente (sin cuerpo de respuesta)
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ══════════════════════════════
+  # POSTS
+  # ══════════════════════════════
+
+  /posts:
+    get:
+      tags: [Posts]
+      summary: Obtener todos los posts
+      description: |
+        Devuelve todos los posts ordenados por fecha de creación descendente.
+        Acepta un query param opcional `published` para filtrar por estado.
+      operationId: getAllPosts
+      parameters:
+        - name: published
+          in: query
+          required: false
+          description: Filtra posts por estado de publicación. Solo acepta `true` o `false` como string exacto.
+          schema:
+            type: string
+            enum: ["true", "false"]
+          example: "true"
+      responses:
+        "200":
+          description: Lista de posts obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Post"
+              example:
+                data:
+                  - id: 1
+                    title: Mi primer post en MiniBlog
+                    content: Contenido del primer post.
+                    author_id: 1
+                    published: true
+                    created_at: "2025-06-05T09:00:00.000Z"
+                  - id: 2
+                    title: Segundo post en borrador
+                    content: Todavía en progreso.
+                    author_id: 1
+                    published: false
+                    created_at: "2025-06-06T14:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Posts]
+      summary: Crear un nuevo post
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+            examples:
+              publicado:
+                summary: Post publicado
+                value:
+                  title: Mi primer post en MiniBlog
+                  content: Contenido del post.
+                  author_id: 1
+                  published: true
+              borrador:
+                summary: Borrador (published por defecto es false)
+                value:
+                  title: Post en borrador
+                  content: Todavía en progreso.
+                  author_id: 1
+      responses:
+        "201":
+          description: Post creado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Post"
+              example:
+                data:
+                  id: 3
+                  title: Mi primer post en MiniBlog
+                  content: Contenido del post.
+                  author_id: 1
+                  published: true
+                  created_at: "2025-06-10T15:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          description: El `author_id` proporcionado no existe (FK violation)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: El recurso asociado (ID de referencia) no existe.
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /posts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+
+    get:
+      tags: [Posts]
+      summary: Obtener un post por ID
+      operationId: getPostById
+      responses:
+        "200":
+          description: Post encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Post"
+              example:
+                data:
+                  id: 1
+                  title: Mi primer post en MiniBlog
+                  content: Contenido del post.
+                  author_id: 1
+                  published: true
+                  created_at: "2025-06-05T09:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Posts]
+      summary: Actualizar un post por ID
+      description: |
+        Reemplazo completo del recurso. `title`, `content` y `author_id` son obligatorios.
+        `published` es opcional; si se omite se interpreta como `false`.
+      operationId: updatePost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+            example:
+              title: Título actualizado
+              content: Contenido actualizado del post.
+              author_id: 1
+              published: true
+      responses:
+        "200":
+          description: Post actualizado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Post"
+              example:
+                data:
+                  id: 1
+                  title: Título actualizado
+                  content: Contenido actualizado del post.
+                  author_id: 1
+                  published: true
+                  created_at: "2025-06-05T09:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Posts]
+      summary: Eliminar un post por ID
+      operationId: deletePost
+      responses:
+        "204":
+          description: Post eliminado correctamente (sin cuerpo de respuesta)
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /posts/author/{authorId}:
+    get:
+      tags: [Posts]
+      summary: Obtener todos los posts de un autor
+      description: |
+        Devuelve todos los posts del autor indicado, ordenados por fecha de creación descendente.
+        Si el autor no tiene posts, devuelve un array vacío (no es un 404).
+      operationId: getPostsByAuthorId
+      parameters:
+        - name: authorId
+          in: path
+          required: true
+          description: ID del autor cuyos posts se quieren obtener
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          example: 1
+      responses:
+        "200":
+          description: Lista de posts del autor (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Post"
+              example:
+                data:
+                  - id: 1
+                    title: Mi primer post en MiniBlog
+                    content: Contenido del post.
+                    author_id: 1
+                    published: true
+                    created_at: "2025-06-05T09:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+# ─────────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────────
+
+components:
+
+  # ── SCHEMAS ──────────────────────────────
+
+  schemas:
+
+    Author:
+      type: object
+      description: Representa un autor del blog tal como lo devuelve la base de datos.
+      properties:
+        id:
+          type: integer
+          description: ID autogenerado por PostgreSQL
+          example: 1
+        name:
+          type: string
+          description: Nombre completo del autor (máximo 100 caracteres)
+          example: Carolina Betlienski
+        email:
+          type: string
+          format: email
+          description: Email único del autor (máximo 150 caracteres, almacenado en minúsculas)
+          example: carolina@devspark.com
+        bio:
+          type: string
+          nullable: true
+          description: Biografía opcional del autor
+          example: Desarrolladora backend junior en DevSpark.
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación (generada por PostgreSQL)
+          example: "2025-06-01T10:00:00.000Z"
+      required: [id, name, email, created_at]
+
+    AuthorInput:
+      type: object
+      description: Campos permitidos para crear o actualizar un autor. Cualquier campo extra es rechazado.
+      properties:
+        name:
+          type: string
+          description: Nombre completo del autor (obligatorio, máximo 100 caracteres)
+          maxLength: 100
+          example: Carolina Betlienski
+        email:
+          type: string
+          format: email
+          description: Email del autor (obligatorio, máximo 150 caracteres)
+          maxLength: 150
+          example: carolina@devspark.com
+        bio:
+          type: string
+          description: Biografía del autor (opcional)
+          example: Desarrolladora backend junior en DevSpark.
+      required: [name, email]
+
+    Post:
+      type: object
+      description: Representa un post del blog tal como lo devuelve la base de datos.
+      properties:
+        id:
+          type: integer
+          description: ID autogenerado por PostgreSQL
+          example: 1
+        title:
+          type: string
+          description: Título del post (máximo 200 caracteres)
+          example: Mi primer post en MiniBlog
+        content:
+          type: string
+          description: Contenido completo del post
+          example: Este es el contenido del post.
+        author_id:
+          type: integer
+          description: ID del autor al que pertenece el post
+          example: 1
+        published:
+          type: boolean
+          description: Estado de publicación del post
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación (generada por PostgreSQL)
+          example: "2025-06-05T09:00:00.000Z"
+      required: [id, title, content, author_id, published, created_at]
+
+    PostInput:
+      type: object
+      description: Campos permitidos para crear o actualizar un post. Cualquier campo extra es rechazado.
+      properties:
+        title:
+          type: string
+          description: Título del post (obligatorio, máximo 200 caracteres)
+          maxLength: 200
+          example: Mi primer post en MiniBlog
+        content:
+          type: string
+          description: Contenido del post (obligatorio)
+          example: Este es el contenido del post.
+        author_id:
+          type: integer
+          description: ID del autor al que pertenece el post (obligatorio, debe existir en la BD)
+          minimum: 1
+          maximum: 2147483647
+          example: 1
+        published:
+          type: boolean
+          description: Estado de publicación (opcional, por defecto false)
+          default: false
+          example: true
+      required: [title, content, author_id]
+
+    ErrorResponse:
+      type: object
+      description: Estructura estándar de todos los errores de la API
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Código semántico del error
+              enum:
+                - VALIDATION_ERROR
+                - NOT_FOUND
+                - CONFLICT
+                - BAD_REQUEST
+                - INTERNAL_ERROR
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              description: Descripción legible del error
+              example: El campo 'name' es obligatorio y debe ser un texto válido.
+            details:
+              type: array
+              description: Detalles adicionales del error (presente solo en algunos casos)
+              items:
+                type: string
+              example: ["name", "email"]
+          required: [code, message]
+      required: [error]
+
+  # ── PARAMETERS ───────────────────────────
+
+  parameters:
+
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      description: ID del recurso. Debe ser un entero positivo de 32 bits (máximo 2.147.483.647).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 2147483647
+      example: 1
+
+  # ── RESPONSES ────────────────────────────
+
+  responses:
+
+    ValidationError:
+      description: Error de validación — campos inválidos, faltantes o no permitidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            campoObligatorio:
+              summary: Campo obligatorio faltante
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: El campo 'name' es obligatorio y debe ser un texto válido.
+            emailInvalido:
+              summary: Formato de email inválido
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: El formato del correo electrónico provisto es inválido o excede los límites.
+            campoExtra:
+              summary: Campo no permitido en el body
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: "Propiedades no permitidas en la solicitud: [role]"
+            idInvalido:
+              summary: ID inválido en la ruta
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: El ID debe ser un número entero positivo válido dentro del rango del sistema.
+            publishedInvalido:
+              summary: Valor inválido para el filtro published
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: El filtro 'published' solo admite los valores string exactos 'true' o 'false'.
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            autorNoEncontrado:
+              summary: Autor no encontrado
+              value:
+                error:
+                  code: NOT_FOUND
+                  message: Autor no encontrado
+            postNoEncontrado:
+              summary: Post no encontrado
+              value:
+                error:
+                  code: NOT_FOUND
+                  message: Post no encontrado
+
+    InternalError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Ocurrió un error interno en el servidor.
