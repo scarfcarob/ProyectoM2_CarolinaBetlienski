@@ -1,12 +1,11 @@
 
 import pool from "../config/db.js";
 
+import { AppError } from "../middleware/errorHandler.js";
 
 // Helper que crea errores con formato estándar
 function notFound(message) {
-    const err = new Error(message);
-    err.status = 404;
-    err.code = "NOT_FOUND";
+    const err = new AppError("NOT_FOUND", message, 404); 
     return err;
 }
 
