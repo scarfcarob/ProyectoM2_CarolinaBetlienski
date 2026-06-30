@@ -450,3 +450,45 @@ La encontrás en **Settings → Networking → Public URL**. Compartila con el e
 
 - Para ver logs en tiempo real: tab **Logs** del dashboard o `railway logs` desde el CLI.
 - Para cargar datos de prueba en producción: `railway run psql $DATABASE_URL -f scripts/seed.sql`.
+- Uso de inteligencia artificial
+
+Durante el desarrollo de este proyecto se utilizó Claude (Anthropic) como herramienta de asistencia. A continuación se detalla de forma transparente en qué áreas y con qué propósito:
+
+Diseño y arquitectura
+
+
+Validación de la arquitectura en capas elegida (routes → controllers → services → db) y consultas sobre buenas prácticas para proyectos Express con ESM.
+Orientación sobre el uso de process.loadEnvFile() nativo como alternativa a dotenv.
+Definición de la estrategia de manejo centralizado de errores con códigos semánticos (VALIDATION_ERROR, NOT_FOUND, CONFLICT, etc.) y mapeo de errores de PostgreSQL.
+
+
+Generación de código
+
+
+Implementación de la función sanitizeObject en validationHelper.js para rechazar campos no permitidos en el body.
+Estructura base del middleware errorHandler.js con manejo diferenciado de errores operativos y errores de Postgres (códigos 23505, 23503, 22003, 22P02).
+Revisión y corrección de lógica en controladores (authorsController.js, postsControllers.js).
+
+
+Documentación
+
+
+Generación del archivo docs/openapi.yaml con especificación OpenAPI 3.0 completa: schemas reutilizables, ejemplos de request/response y mensajes de error reales extraídos del código.
+Redacción y revisión iterativa de este README.md en múltiples versiones, ajustando la estructura de archivos para que coincida con el proyecto real.
+Definición de los mensajes de commit siguiendo la convención Conventional Commits (docs:, feat:, etc.) en español.
+
+
+Testing
+
+
+Orientación sobre la estrategia de testing con Vitest y Supertest.
+Explicación del uso de beforeAll en posts.test.js para crear un autor real antes de ejecutar los tests de posts.
+Sugerencia del uso de Date.now() en emails de prueba para evitar conflictos con la restricción UNIQUE de la base de datos.
+
+
+Aclaraciones
+
+
+Todo el código fue revisado, comprendido y validado por la desarrolladora antes de integrarse al proyecto.
+Las decisiones de diseño, la estructura del proyecto y la lógica de negocio fueron definidas y aprobadas por la desarrolladora.
+El uso de IA funcionó como herramienta de apoyo y aceleración del proceso de desarrollo, no como reemplazo del criterio técnico propio.
