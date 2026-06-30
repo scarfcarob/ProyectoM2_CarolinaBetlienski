@@ -452,6 +452,9 @@ La encontrás en **Settings → Networking → Public URL**. Compartila con el e
 - Para cargar datos de prueba en producción: `railway run psql $DATABASE_URL -f scripts/seed.sql`.
 - Uso de inteligencia artificial
 
+Uso de Inteligencia Artificial:
+
+
 Durante el desarrollo de este proyecto se utilizó Claude (Anthropic) como herramienta de asistencia. A continuación se detalla de forma transparente en qué áreas y con qué propósito:
 
 Diseño y arquitectura
